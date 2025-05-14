@@ -1105,7 +1105,7 @@ def call_siliconflow_api(prompt, temperature=0.7, max_tokens=1024):
         }
         
         headers = {
-            "Authorization": f"Bearer sk-lkyhoqsulzscivpiogbesxhougfjaqlthmakpnkmsousyqep",
+            "Authorization": f"Bearer 你的key",
             "Content-Type": "application/json"
         }
         
