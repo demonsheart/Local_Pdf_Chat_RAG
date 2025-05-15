@@ -28,6 +28,9 @@ import numpy as np # Убедимся, что numpy импортирован
 import jieba
 import threading
 from functools import lru_cache
+import os
+from urllib.request import getproxies
+from typing import List, Dict, Optional, Tuple, Union, Any
 
 # 加载环境变量
 load_dotenv()
@@ -36,8 +39,8 @@ SEARCH_ENGINE = "google"  # Можно изменить на другую пои
 # Новое: Конфигурация метода переранжирования (кросс-энкодер или LLM)
 RERANK_METHOD = os.getenv("RERANK_METHOD", "cross_encoder")  # "cross_encoder" или "llm"
 # Новое: Конфигурация SiliconFlow API
-SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY")
-SILICONFLOW_API_URL = os.getenv("SILICONFLOW_API_URL", "https://api.siliconflow.cn/v1/chat/completions")
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+DEEPSEEK_API_URL = os.getenv("DEEPSEEK_API_URL")
 
 # В начале файла добавляем настройки таймаута
 import requests
@@ -990,7 +993,7 @@ def query_answer(question, enable_web_search=False, model_choice="ollama", progr
             response = session.post(
                 "http://localhost:11434/api/generate",
                 json={
-                    "model": "deepseek-r1:7b",
+                    "model": "deepseek-r1:1.5b",
                     "prompt": prompt,
                     "stream": False
                 },
@@ -1086,7 +1089,7 @@ def call_siliconflow_api(prompt, temperature=0.7, max_tokens=1024):
     """
     try:
         payload = {
-            "model": "Pro/deepseek-ai/DeepSeek-R1",
+            "model": "deepseek-reasoner",
             "messages": [
                 {
                     "role": "user",
@@ -1105,12 +1108,12 @@ def call_siliconflow_api(prompt, temperature=0.7, max_tokens=1024):
         }
         
         headers = {
-            "Authorization": f"Bearer 你的key",
+            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
             "Content-Type": "application/json"
         }
         
         response = requests.post(
-            SILICONFLOW_API_URL,
+            DEEPSEEK_API_URL,
             json=payload,
             headers=headers,
             timeout=60  # 延长超时时间
@@ -1915,12 +1918,12 @@ def check_environment():
         # 添加模型存在性检查
         model_check = session.post(
             "http://localhost:11434/api/show",
-            json={"name": "deepseek-r1:7b"},
+            json={"name": "deepseek-r1:1.5b"},
             timeout=10
         )
         if model_check.status_code != 200:
             print("模型未加载！请先执行：")
-            print("ollama pull deepseek-r1:7b")
+            print("ollama pull deepseek-r1:1.5b")
             return False
             
         # 原有检查保持不变...
@@ -1950,7 +1953,11 @@ if __name__ == "__main__":
         exit(1)
     ports = [17995, 17996, 17997, 17998, 17999]
     selected_port = next((p for p in ports if is_port_available(p)), None)
-    
+    # proxies = getproxies()
+    # os.environ["HTTP_PROXY"]  = os.environ["http_proxy"]  = proxies["http"]
+    # os.environ["HTTPS_PROXY"] = os.environ["https_proxy"] = proxies["https"]
+    # os.environ["NO_PROXY"]  = os.environ["no_proxy"]  = "localhost, 127.0.0.1/8, ::1"
+        
     if not selected_port:
         print("所有端口都被占用，请手动释放端口")
         exit(1)
@@ -1961,15 +1968,14 @@ if __name__ == "__main__":
             print("Ollama服务未正常启动！")
             print("请先执行：ollama serve 启动服务")
             exit(1)
-            
         webbrowser.open(f"http://127.0.0.1:{selected_port}")
         demo.launch(
             server_port=selected_port,
             server_name="0.0.0.0",
             show_error=True,
             ssl_verify=False,
-            height=900
+            height=900,
+            # share=True
         )
     except Exception as e:
         print(f"启动失败: {str(e)}")
-
