@@ -139,8 +139,8 @@ def recursive_retrieval(initial_query, max_iterations=3, enable_web_search=False
                         semantic_results_docs.append(faiss_contents_map.get(original_id, ""))
                         semantic_results_metadatas.append(faiss_metadatas_map.get(original_id, {}))
                         semantic_results_ids.append(original_id)
-        except Exception as e:
-                logging.error(f"FAISS 检索错误: {str(e)}")
+            except Exception as e:
+                    logging.error(f"FAISS 检索错误: {str(e)}")
         
         bm25_results = BM25_MANAGER.search(query, top_k=10) # BM25_MANAGER.search returns list of dicts
         
@@ -487,8 +487,8 @@ def process_multiple_pdfs(files, progress=gr.Progress()):
         faiss_metadatas_map = {}
         faiss_id_order_for_index = []
         
-            # 清空BM25索引
-            BM25_MANAGER.clear()
+        # 清空BM25索引
+        BM25_MANAGER.clear()
         logging.info("成功清理历史FAISS数据和BM25索引")
         
         # 清空文件处理状态
@@ -1230,7 +1230,7 @@ def update_bm25_index():
         # Filter out any potential empty documents if necessary, though map access should be safe
         valid_docs_with_ids = [(doc_id, doc) for doc_id, doc in zip(doc_ids, documents) if doc]
         if not valid_docs_with_ids:
-             logging.warning("没有有效的文档内容可用于BM25索引")
+            logging.warning("没有有效的文档内容可用于BM25索引")
             BM25_MANAGER.clear()
             return False
             

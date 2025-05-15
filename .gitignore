@@ -18,3 +18,4 @@ __pycache__/
 
 # 环境文件
 .env
+example.env

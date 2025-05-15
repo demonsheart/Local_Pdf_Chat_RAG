@@ -9,12 +9,11 @@ import os
 import re
 from typing import Dict, Any, List, Optional
 import logging
-import json
 import asyncio
 from contextlib import asynccontextmanager
 
-# 从rag_demo导入所需功能
-import rag_demo
+# 从rag_demo_pro导入所需功能
+import rag_demo_pro
 from io import StringIO
 
 # 配置日志
@@ -38,7 +37,7 @@ class ProgressCallback:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 检查环境
-    if not rag_demo.check_environment():
+    if not rag_demo_pro.check_environment():
         logger.error("环境检查失败！请确保Ollama服务已启动且所需模型已加载")
     yield
     # 清理工作（如果需要）
@@ -82,7 +81,7 @@ async def process_answer_stream(question: str, enable_web_search: bool):
     
     # 创建生成器函数的包装器
     def run_stream():
-        for response, status in rag_demo.stream_answer(question, enable_web_search, progress):
+        for response, status in rag_demo_pro.stream_answer(question, enable_web_search, progress):
             nonlocal answer
             answer = response
             yield response, status
@@ -122,9 +121,9 @@ async def upload_pdf(file: UploadFile = File(...)):
         # 创建一个进度回调
         progress = ProgressCallback()
         
-        # 使用rag_demo中的处理函数
+        # 使用rag_demo_pro中的处理函数
         result_text = await asyncio.to_thread(
-            rag_demo.process_multiple_pdfs,
+            rag_demo_pro.process_multiple_pdfs,
             [type('obj', (object,), {"name": tmp_path})],
             progress
         )
@@ -196,8 +195,8 @@ async def ask_question(req: QuestionRequest):
 @app.get("/api/status")
 async def check_status():
     """检查API服务状态和环境配置"""
-    ollama_status = rag_demo.check_environment()
-    serpapi_status = rag_demo.check_serpapi_key()
+    ollama_status = rag_demo_pro.check_environment()
+    serpapi_status = rag_demo_pro.check_serpapi_key()
     
     return {
         "status": "healthy" if ollama_status else "degraded",
@@ -210,7 +209,7 @@ async def check_status():
 @app.get("/api/web_search_status")
 async def check_web_search():
     """检查网络搜索功能是否可用"""
-    serpapi_key = rag_demo.SERPAPI_KEY
+    serpapi_key = rag_demo_pro.SERPAPI_KEY
     return {
         "web_search_available": bool(serpapi_key and serpapi_key.strip()),
         "serpapi_configured": bool(serpapi_key and serpapi_key.strip())
@@ -220,10 +219,10 @@ if __name__ == "__main__":
     import uvicorn
     port = 17995
     
-    # 尝试使用rag_demo中的端口检测逻辑
+    # 尝试使用rag_demo_pro中的端口检测逻辑
     ports = [17995, 17996, 17997, 17998, 17999]
     for p in ports:
-        if rag_demo.is_port_available(p):
+        if rag_demo_pro.is_port_available(p):
             port = p
             break
     
