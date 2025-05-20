@@ -38,7 +38,7 @@ SERPAPI_KEY = os.getenv("SERPAPI_KEY")  # В .env файле установит�
 SEARCH_ENGINE = "google"  # Можно изменить на другую поисковую систему при необходимости
 # Новое: Конфигурация метода переранжирования (кросс-энкодер или LLM)
 RERANK_METHOD = os.getenv("RERANK_METHOD", "cross_encoder")  # "cross_encoder" или "llm"
-# Новое: Конфигурация SiliconFlow API
+# Новое: Конфигурация deepseek API
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = os.getenv("DEEPSEEK_API_URL")
 
@@ -94,7 +94,7 @@ def recursive_retrieval(initial_query, max_iterations=3, enable_web_search=False
         initial_query: 初始查询
         max_iterations: 最大迭代次数
         enable_web_search: 是否启用网络搜索
-        model_choice: 使用的模型选择("ollama"或"siliconflow")
+        model_choice: 使用的模型选择("ollama"或"deepseek")
         
     Returns:
         包含所有检索内容的列表
@@ -205,9 +205,9 @@ def recursive_retrieval(initial_query, max_iterations=3, enable_web_search=False
 新查询(如果需要):"""
             
             try:
-                if model_choice == "siliconflow":
-                    logging.info("使用SiliconFlow API分析是否需要进一步查询")
-                    next_query_result = call_siliconflow_api(next_query_prompt, temperature=0.7, max_tokens=256)
+                if model_choice == "deepseek":
+                    logging.info("使用deepseek API分析是否需要进一步查询")
+                    next_query_result = call_deepseek_api(next_query_prompt, temperature=0.7, max_tokens=256)
                     if "<think>" in next_query_result:
                         next_query = next_query_result.split("<think>")[0].strip()
                     else:
@@ -845,10 +845,10 @@ def stream_answer(question, enable_web_search=False, model_choice="ollama", prog
         full_answer = ""
         
         # 根据模型选择使用不同的API
-        if model_choice == "siliconflow":
-            # 对于SiliconFlow API，不支持流式响应，所以一次性获取
-            progress(0.8, desc="通过SiliconFlow API生成回答...")
-            full_answer = call_siliconflow_api(prompt, temperature=0.7, max_tokens=1536)
+        if model_choice == "deepseek":
+            # 对于deepseek API，不支持流式响应，所以一次性获取
+            progress(0.8, desc="通过deepseek API生成回答...")
+            full_answer = call_deepseek_api(prompt, temperature=0.7, max_tokens=1536)
             
             # 处理思维链
             if "<think>" in full_answer and "</think>" in full_answer:
@@ -981,9 +981,9 @@ def query_answer(question, enable_web_search=False, model_choice="ollama", progr
         progress(0.8, desc="生成回答...")
         
         # 根据模型选择使用不同的API
-        if model_choice == "siliconflow":
-            # 使用SiliconFlow API
-            result = call_siliconflow_api(prompt, temperature=0.7, max_tokens=1536)
+        if model_choice == "deepseek":
+            # 使用deepseek API
+            result = call_deepseek_api(prompt, temperature=0.7, max_tokens=1536)
             
             # 处理思维链
             processed_result = process_thinking_content(result)
@@ -1075,9 +1075,9 @@ def process_thinking_content(text):
     
     return processed_text
 
-def call_siliconflow_api(prompt, temperature=0.7, max_tokens=1024):
+def call_deepseek_api(prompt, temperature=0.7, max_tokens=1024):
     """
-    调用SiliconFlow API获取回答
+    调用deepseek API获取回答
     
     Args:
         prompt: 提示词
@@ -1139,13 +1139,13 @@ def call_siliconflow_api(prompt, temperature=0.7, max_tokens=1024):
             return "API返回结果格式异常，请检查"
             
     except requests.exceptions.RequestException as e:
-        logging.error(f"调用SiliconFlow API时出错: {str(e)}")
+        logging.error(f"调用deepseek API时出错: {str(e)}")
         return f"调用API时出错: {str(e)}"
     except json.JSONDecodeError:
-        logging.error("SiliconFlow API返回非JSON响应")
+        logging.error("deepseek API返回非JSON响应")
         return "API响应解析失败"
     except Exception as e:
-        logging.error(f"调用SiliconFlow API时发生未知错误: {str(e)}")
+        logging.error(f"调用deepseek API时发生未知错误: {str(e)}")
         return f"发生未知错误: {str(e)}"
 
 def hybrid_merge(semantic_results, bm25_results, alpha=0.7):
@@ -1677,7 +1677,7 @@ with gr.Blocks(
                             
                             # 添加模型选择下拉框
                             model_choice = gr.Dropdown(
-                                choices=["ollama", "siliconflow"],
+                                choices=["ollama", "deepseek"],
                                 value="ollama",
                                 label="模型选择",
                                 info="选择使用本地模型或云端模型"
@@ -1792,7 +1792,7 @@ with gr.Blocks(
         </div>
         """ % (
             "已启用" if enable_web_search else "未启用", 
-            "Cloud DeepSeek-R1 模型" if model_choice == "siliconflow" else "本地 Ollama 模型",
+            "Cloud DeepSeek-R1 模型" if model_choice == "deepseek" else "本地 Ollama 模型",
             "(需要在.env文件中配置SERPAPI_KEY)" if enable_web_search else ""
         )
         
@@ -1821,7 +1821,7 @@ with gr.Blocks(
         </div>
         """ % (
             "已启用" if enable_web_search else "未启用", 
-            "Cloud DeepSeek-R1 模型" if model_choice == "siliconflow" else "本地 Ollama 模型",
+            "Cloud DeepSeek-R1 模型" if model_choice == "deepseek" else "本地 Ollama 模型",
             "(需要在.env文件中配置SERPAPI_KEY)" if enable_web_search else ""
         )
         return api_text
